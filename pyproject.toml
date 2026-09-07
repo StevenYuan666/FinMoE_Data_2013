@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fineweb-edu-2013-qwen2"
+version = "0.1.0"
+description = "Reproducible Qwen2-7B token counts for FineWeb-Edu 2013"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "datasets==2.21.0",
+  "huggingface-hub==0.24.6",
+  "pyarrow==17.0.0",
+  "tokenizers==0.19.1",
+  "transformers==4.44.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.3.2"]
+
+[project.scripts]
+process-fineweb-2013 = "process_fineweb_2013:main"
+
+[tool.setuptools]
+py-modules = ["process_fineweb_2013"]
+package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

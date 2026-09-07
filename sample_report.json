@@ -1,0 +1,71 @@
+{
+  "mode": "sample",
+  "year": 2013,
+  "rows": 100,
+  "token_count": 107528,
+  "source_configs": [
+    {
+      "source_config": "CC-MAIN-2013-20",
+      "rows": 50,
+      "token_count": 42375,
+      "shards": 1
+    },
+    {
+      "source_config": "CC-MAIN-2013-48",
+      "rows": 50,
+      "token_count": 65153,
+      "shards": 1
+    }
+  ],
+  "processing_config": {
+    "year": 2013,
+    "source": {
+      "dataset": "HuggingFaceFW/fineweb-edu",
+      "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+      "configs": {
+        "CC-MAIN-2013-20": 11002672,
+        "CC-MAIN-2013-48": 10797532
+      },
+      "text_field": "text",
+      "preserve_text_exactly": true
+    },
+    "tokenizer": {
+      "checkpoint": "Qwen/Qwen2-7B",
+      "revision": "453ed1575b739b5b03ce3758b23befdb0967f40e",
+      "use_fast": true,
+      "add_special_tokens": false,
+      "truncation": false,
+      "padding": false,
+      "text_normalization_before_tokenization": "none",
+      "count_definition": "len(input_ids)"
+    },
+    "output": {
+      "columns": {
+        "date": "int32",
+        "text": "string",
+        "token_count": "int32"
+      },
+      "format": "parquet",
+      "compression": "zstd",
+      "split": "train"
+    },
+    "sampling": {
+      "method": "first N records from each pinned source config",
+      "rows_per_config": 50,
+      "shuffle": false
+    },
+    "target_tokens": 100000000000,
+    "selection_rule": "Retain all 2013 records because the available year is below the target; determine the exact total using the pinned Qwen2-7B tokenizer."
+  },
+  "runtime": {
+    "python": "3.11.7",
+    "platform": "macOS-15.6.1-arm64-arm-64bit",
+    "packages": {
+      "datasets": "2.21.0",
+      "huggingface-hub": "0.24.6",
+      "pyarrow": "17.0.0",
+      "tokenizers": "0.19.1",
+      "transformers": "4.44.2"
+    }
+  }
+}
