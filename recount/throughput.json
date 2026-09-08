@@ -1,0 +1,11 @@
+{
+  "rows_benchmarked": 20000,
+  "tokens_benchmarked": 21194080,
+  "batch_size": 64,
+  "elapsed_seconds": 9.49936006590724,
+  "docs_per_second": 2105.4049810975234,
+  "tokens_per_second": 2231106.08008897,
+  "full_run_rows": 21800204,
+  "projected_tokenization_hours": 2.876222045919879,
+  "note": "Tokenization only; excludes streaming, Parquet writes, and uploads."
+}

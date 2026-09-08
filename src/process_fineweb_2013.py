@@ -7,6 +7,8 @@ import importlib.metadata
 import json
 import os
 import platform
+import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -47,6 +49,69 @@ class Progress:
         temporary = path.with_suffix(".tmp")
         temporary.write_text(json.dumps(self.__dict__, indent=2) + "\n")
         os.replace(temporary, path)
+
+
+def format_duration(seconds: float) -> str:
+    if seconds != seconds or seconds in (float("inf"), float("-inf")):
+        return "unknown"
+    seconds = int(max(0, seconds))
+    hours, remainder = divmod(seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{hours:d}:{minutes:02d}:{secs:02d}"
+
+
+class ProgressReporter:
+    """Emit periodic progress lines so a long run is observable while it works.
+
+    Reporting is purely observational: it never touches the text, the token
+    counts, or the checkpoints. ``rows_at_start`` is the resume point so the
+    rate and ETA describe the current process, while the percentage describes
+    the whole config.
+    """
+
+    def __init__(
+        self,
+        *,
+        label: str,
+        target_rows: int,
+        rows_at_start: int,
+        interval: float,
+        stream: Any = None,
+    ) -> None:
+        self.label = label
+        self.target_rows = target_rows
+        self.rows_at_start = rows_at_start
+        self.interval = interval
+        self.stream = stream if stream is not None else sys.stdout
+        self.started = time.monotonic()
+        self.last_emit = 0.0
+
+    def emit(self, rows_done: int, tokens_done: int, event: str = "") -> None:
+        now = time.monotonic()
+        elapsed = now - self.started
+        processed = max(0, rows_done - self.rows_at_start)
+        rate = processed / elapsed if elapsed > 0 else 0.0
+        remaining = max(0, self.target_rows - rows_done)
+        eta = remaining / rate if rate > 0 else float("inf")
+        percent = (rows_done / self.target_rows * 100) if self.target_rows else 100.0
+        suffix = f" {event}" if event else ""
+        print(
+            f"[progress] {self.label} "
+            f"rows {rows_done:,}/{self.target_rows:,} ({percent:.2f}%) "
+            f"tokens {tokens_done:,} "
+            f"rate {rate:,.0f} doc/s "
+            f"elapsed {format_duration(elapsed)} "
+            f"eta {format_duration(eta)}{suffix}",
+            file=self.stream,
+            flush=True,
+        )
+        self.last_emit = now
+
+    def maybe_emit(self, rows_done: int, tokens_done: int) -> None:
+        if self.interval <= 0:
+            return
+        if time.monotonic() - self.last_emit >= self.interval:
+            self.emit(rows_done, tokens_done)
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -128,6 +193,7 @@ def process_source_config(
     sample_rows: int,
     repo_id: str | None,
     delete_after_upload: bool,
+    progress_interval: float = 30.0,
 ) -> dict[str, Any]:
     destination = "sample" if mode == "sample" else "data"
     output_dir = output_root / destination / "train"
@@ -139,12 +205,31 @@ def process_source_config(
     if progress.rows > target_rows:
         raise ValueError(f"Checkpoint has {progress.rows} rows, beyond target {target_rows}")
     if progress.rows == target_rows:
+        print(
+            f"[progress] {source_config} already complete at {progress.rows:,} rows "
+            f"({progress.tokens:,} tokens, {progress.shards} shards); skipping",
+            flush=True,
+        )
         return {
             "source_config": source_config,
             "rows": progress.rows,
             "token_count": progress.tokens,
             "shards": progress.shards,
         }
+
+    reporter = ProgressReporter(
+        label=source_config,
+        target_rows=target_rows,
+        rows_at_start=progress.rows,
+        interval=progress_interval,
+    )
+    if progress.rows:
+        print(
+            f"[progress] {source_config} resuming from checkpoint at {progress.rows:,} rows "
+            f"({progress.shards} shards already done); the stream must re-skip those rows",
+            flush=True,
+        )
+    reporter.emit(progress.rows, progress.tokens, event="start")
 
     source = settings["source"]
     stream = load_dataset(
@@ -199,6 +284,11 @@ def process_source_config(
             final_path.unlink()
         shard_rows = []
         shard_counts = []
+        reporter.emit(
+            progress.rows,
+            progress.tokens,
+            event=f"shard {progress.shards} written{' and uploaded' if api is not None else ''}: {filename}",
+        )
 
     for texts in batched_texts(stream, batch_size):
         lengths = count_tokens(tokenizer, texts)
@@ -211,7 +301,9 @@ def process_source_config(
             offset = end
             if len(shard_rows) == rows_per_shard:
                 flush_shard()
+        reporter.maybe_emit(progress.rows + len(shard_rows), progress.tokens + sum(shard_counts))
     flush_shard()
+    reporter.emit(progress.rows, progress.tokens, event="config complete")
 
     if progress.rows != target_rows:
         raise RuntimeError(
@@ -238,6 +330,12 @@ def parse_args() -> argparse.Namespace:
         "--delete-after-upload",
         action="store_true",
         help="Delete each local shard after a successful upload",
+    )
+    parser.add_argument(
+        "--progress-interval",
+        type=float,
+        default=30.0,
+        help="Seconds between progress lines; 0 disables periodic reporting",
     )
     return parser.parse_args()
 
@@ -272,6 +370,19 @@ def main() -> None:
         if args.sample_rows_per_config is not None
         else settings["sampling"]["rows_per_config"]
     )
+    total_target = (
+        sum(settings["source"]["configs"].values())
+        if args.mode == "full"
+        else sample_rows * len(settings["source"]["configs"])
+    )
+    print(
+        f"[progress] starting {args.mode} run: {total_target:,} target rows across "
+        f"{len(settings['source']['configs'])} source configs, "
+        f"{args.rows_per_shard:,} rows per shard, output root {args.output_root}",
+        flush=True,
+    )
+    run_started = time.monotonic()
+
     reports = []
     for source_config, expected_rows in settings["source"]["configs"].items():
         reports.append(
@@ -287,7 +398,15 @@ def main() -> None:
                 sample_rows=sample_rows,
                 repo_id=args.repo_id,
                 delete_after_upload=args.delete_after_upload,
+                progress_interval=args.progress_interval,
             )
+        )
+        done_rows = sum(item["rows"] for item in reports)
+        print(
+            f"[progress] finished {source_config}; run total {done_rows:,}/{total_target:,} rows "
+            f"({done_rows / total_target * 100:.2f}%) "
+            f"after {format_duration(time.monotonic() - run_started)}",
+            flush=True,
         )
 
     report = {
@@ -308,6 +427,12 @@ def main() -> None:
             report_path,
             f"{args.mode}_report.json",
         )
+    print(
+        f"[progress] {args.mode} run complete: {report['rows']:,} rows, "
+        f"{report['token_count']:,} tokens, "
+        f"total wall time {format_duration(time.monotonic() - run_started)}",
+        flush=True,
+    )
     print(json.dumps(report, indent=2))
 
 

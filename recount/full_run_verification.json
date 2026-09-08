@@ -1,0 +1,36 @@
+{
+  "output_root": "/home/yeyyuan/fineweb-2013",
+  "shard_files": 89,
+  "measured_rows": 21800204,
+  "expected_rows": 21800204,
+  "measured_tokens": 22693600656,
+  "report_tokens": 22693600656,
+  "per_config": {
+    "CC-MAIN-2013-20": {
+      "shards": 45,
+      "rows": 11002672,
+      "tokens": 11441832889,
+      "bytes": 21981694489,
+      "gib": 20.472048305906355,
+      "mean_tokens_per_doc": 1039.9140217030917
+    },
+    "CC-MAIN-2013-48": {
+      "shards": 44,
+      "rows": 10797532,
+      "tokens": 11251767767,
+      "bytes": 21589758025,
+      "gib": 20.10702902916819,
+      "mean_tokens_per_doc": 1042.0684807417103
+    }
+  },
+  "total_bytes": 43571452514,
+  "total_gib": 40.579077335074544,
+  "min_token_count": 32,
+  "max_token_count": 181911,
+  "mean_tokens_per_doc": 1040.9811144886535,
+  "target_tokens": 100000000000,
+  "below_target": true,
+  "schema_ok": true,
+  "problems": [],
+  "verdict": "PASS"
+}

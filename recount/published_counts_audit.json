@@ -1,0 +1,103 @@
+{
+  "output_root": "/home/yeyyuan/fineweb-2013",
+  "seed": 20130520,
+  "shards_sampled": 15,
+  "documents_audited": 900,
+  "tokens_audited": 935829,
+  "mismatches": [],
+  "per_shard": [
+    {
+      "shard": "CC-MAIN-2013-20-00006.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00008.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00013.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00015.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00021.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00028.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00030.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00043.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-20-00044.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-48-00007.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-48-00008.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-48-00015.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-48-00016.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-48-00017.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2013-48-00028.parquet",
+      "row_group": 0,
+      "rows_audited": 60,
+      "mismatches": 0
+    }
+  ],
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_is_fast": true,
+  "verdict": "PASS"
+}

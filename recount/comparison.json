@@ -1,0 +1,67 @@
+{
+  "rows_compared": 100,
+  "all_counts_match": true,
+  "totals": {
+    "stored": 107528,
+    "baseline": 107528,
+    "candidate": 107528
+  },
+  "per_shard": {
+    "CC-MAIN-2013-20-00000.parquet": {
+      "rows": 50,
+      "baseline_tokens": 42375,
+      "candidate_tokens": 42375,
+      "stored_tokens": 42375,
+      "mismatches": 0
+    },
+    "CC-MAIN-2013-48-00000.parquet": {
+      "rows": 50,
+      "baseline_tokens": 65153,
+      "candidate_tokens": 65153,
+      "stored_tokens": 65153,
+      "mismatches": 0
+    }
+  },
+  "token_count_mismatches_baseline_vs_candidate": [],
+  "stored_vs_baseline_mismatches": [],
+  "stored_vs_candidate_mismatches": [],
+  "text_payload_mismatches": [],
+  "baseline_environment": {
+    "tokenizer_class": "Qwen2TokenizerFast",
+    "tokenizer_is_fast": true,
+    "tokenizer_vocab_size": 151643,
+    "python": "3.11.15",
+    "platform": "Linux-5.10.262-267.1063.amzn2int.x86_64-x86_64-with-glibc2.26",
+    "packages": {
+      "huggingface-hub": "0.24.6",
+      "numpy": "1.26.4",
+      "pyarrow": "17.0.0",
+      "tokenizers": "0.19.1",
+      "transformers": "4.44.2"
+    }
+  },
+  "candidate_environment": {
+    "tokenizer_class": "Qwen2Tokenizer",
+    "tokenizer_is_fast": true,
+    "tokenizer_vocab_size": 151643,
+    "python": "3.11.15",
+    "platform": "Linux-5.10.262-267.1063.amzn2int.x86_64-x86_64-with-glibc2.26",
+    "packages": {
+      "huggingface-hub": "1.30.0",
+      "numpy": "1.26.4",
+      "pyarrow": "17.0.0",
+      "tokenizers": "0.22.2",
+      "transformers": "5.0.0"
+    }
+  },
+  "counting_contract": {
+    "checkpoint": "Qwen/Qwen2-7B",
+    "revision": "453ed1575b739b5b03ce3758b23befdb0967f40e",
+    "use_fast": true,
+    "add_special_tokens": false,
+    "truncation": false,
+    "padding": false,
+    "text_normalization_before_tokenization": "none",
+    "count_definition": "len(input_ids)"
+  }
+}

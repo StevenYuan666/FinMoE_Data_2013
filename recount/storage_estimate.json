@@ -1,0 +1,59 @@
+{
+  "target_path": ".",
+  "filesystem": {
+    "total_bytes": 528275378176,
+    "used_bytes": 160526491648,
+    "free_bytes": 367646232576,
+    "total_gib": 491.9947853088379,
+    "free_gib": 342.3972358703613
+  },
+  "total_rows": 21800204,
+  "per_config": {
+    "CC-MAIN-2013-20": {
+      "expected_rows": 11002672,
+      "source_shards": 14,
+      "source_bytes_on_hub": 32599389096,
+      "sampled_shards": [
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-20/train-00000-of-00014.parquet",
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-20/train-00001-of-00014.parquet"
+      ],
+      "sampled_rows": 1571812,
+      "sampled_codecs": [
+        "SNAPPY"
+      ],
+      "text_bytes_per_row_uncompressed": 4870.969689123127,
+      "text_bytes_per_row_compressed_source_codec": 2907.7878976620614,
+      "text_share_of_compressed_source": 0.9656765185833153,
+      "projected_text_uncompressed_bytes": 53593681811.36373,
+      "projected_text_compressed_bytes_source_codec": 31993436483.545227
+    },
+    "CC-MAIN-2013-48": {
+      "expected_rows": 10797532,
+      "source_shards": 14,
+      "source_bytes_on_hub": 32014273800,
+      "sampled_shards": [
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-48/train-00000-of-00014.parquet",
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-48/train-00001-of-00014.parquet"
+      ],
+      "sampled_rows": 1542506,
+      "sampled_codecs": [
+        "SNAPPY"
+      ],
+      "text_bytes_per_row_uncompressed": 4867.537033243307,
+      "text_bytes_per_row_compressed_source_codec": 2908.93352505598,
+      "text_share_of_compressed_source": 0.9651792855579358,
+      "projected_text_uncompressed_bytes": 52557386877.62967,
+      "projected_text_compressed_bytes_source_codec": 31409302822.66475
+    }
+  },
+  "projections": {
+    "source_bytes_on_hub": 64613662896,
+    "source_gib_on_hub": 60.176162883639336,
+    "text_uncompressed_bytes": 106151068688.99341,
+    "text_uncompressed_gib": 98.86088658961785,
+    "output_text_compressed_bytes_source_codec": 63402739306.20998,
+    "output_text_compressed_gib_source_codec": 59.04840240833347,
+    "scalar_columns_bytes": 174401632,
+    "scalar_columns_gib": 0.16242417693138123
+  }
+}

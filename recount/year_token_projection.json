@@ -1,0 +1,38 @@
+{
+  "per_config": {
+    "CC-MAIN-2013-20": {
+      "expected_rows": 11002672,
+      "shards_inspected": [
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-20/train-00000-of-00014.parquet",
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-20/train-00006-of-00014.parquet",
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-20/train-00013-of-00014.parquet"
+      ],
+      "sampled_rows": 60000,
+      "sampled_tokens": 62228803,
+      "sampled_utf8_bytes": 284754880,
+      "tokens_per_row": 1037.1467166666666,
+      "utf8_bytes_per_token": 4.575933752092259,
+      "projected_tokens": 11411385139.360266
+    },
+    "CC-MAIN-2013-48": {
+      "expected_rows": 10797532,
+      "shards_inspected": [
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-48/train-00000-of-00014.parquet",
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-48/train-00006-of-00014.parquet",
+        "datasets/HuggingFaceFW/fineweb-edu@87f09149ef4734204d70ed1d046ddc9ca3f2b8f9/data/CC-MAIN-2013-48/train-00013-of-00014.parquet"
+      ],
+      "sampled_rows": 60000,
+      "sampled_tokens": 62375670,
+      "sampled_utf8_bytes": 285175117,
+      "tokens_per_row": 1039.5945,
+      "utf8_bytes_per_token": 4.571896654577017,
+      "projected_tokens": 11225054880.773998
+    }
+  },
+  "total_rows": 21800204,
+  "projected_year_tokens": 22636440020.134262,
+  "projected_year_tokens_billions": 22.636440020134263,
+  "target_tokens": 100000000000,
+  "below_target": true,
+  "note": "Extrapolated by row count from sampled row groups; the full run produces the authoritative total."
+}

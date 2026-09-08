@@ -1,0 +1,73 @@
+{
+  "target_path": ".",
+  "filesystem": {
+    "device": "/dev/nvme0n1p1",
+    "total_gib": 491.9947853088379,
+    "used_gib": 149.5362205505371,
+    "free_gib": 342.3629608154297,
+    "free_bytes": 367609430016
+  },
+  "source": {
+    "streamed_not_persisted": true,
+    "bytes_on_hub": 64613662896,
+    "gib_on_hub": 60.176162883639336,
+    "measured_cache_growth_bytes_for_100_doc_sample": 34661,
+    "note": "load_dataset(streaming=True) reads over HTTP; source parquet is not written to disk."
+  },
+  "output": {
+    "rows": 21800204,
+    "per_config": {
+      "CC-MAIN-2013-20": {
+        "rows": 11002672,
+        "measured_zstd_bytes_per_row": 2026.3388333333332,
+        "measured_on_rows": 60000,
+        "projected_output_bytes": 22295141544.02933,
+        "projected_output_gib": 20.76396862420191,
+        "shards_at_rows_per_shard": 45
+      },
+      "CC-MAIN-2013-48": {
+        "rows": 10797532,
+        "measured_zstd_bytes_per_row": 2022.8931166666666,
+        "measured_on_rows": 60000,
+        "projected_output_bytes": 21842253159.788067,
+        "projected_output_gib": 20.342183448176893,
+        "shards_at_rows_per_shard": 44
+      }
+    },
+    "projected_output_bytes": 44137394703.8174,
+    "projected_output_gib": 41.106152072378805,
+    "rows_per_shard": 250000,
+    "total_shards": 89,
+    "approx_shard_bytes": 506584708.3333333,
+    "approx_shard_gib": 0.47179377482583124
+  },
+  "overheads": {
+    "tokenizer_cache_bytes": 12582912,
+    "virtualenv_bytes": 471859200,
+    "upload_and_tmp_staging_bytes": 1013169416.6666666,
+    "checkpoint_bytes": 1048576
+  },
+  "scenarios": {
+    "keep_all_shards_locally": {
+      "peak_bytes": 45636054808.48406,
+      "peak_gib": 42.501888059530465,
+      "fits": true,
+      "free_gib_remaining_after": 299.8610727558992,
+      "headroom_multiple": 8.055241224481543
+    },
+    "delete_after_upload": {
+      "peak_bytes": 2005244812.9999998,
+      "peak_gib": 1.8675297619774935,
+      "fits": true,
+      "free_gib_remaining_after": 340.4954310534522,
+      "headroom_multiple": 183.32396505044596
+    }
+  },
+  "year_tokens": {
+    "projected": 22636440020.134262,
+    "projected_billions": 22.636440020134263,
+    "target": 100000000000,
+    "below_target": true,
+    "selection_consequence": "Retain all 21,800,204 documents; no shuffling or subsetting needed."
+  }
+}
