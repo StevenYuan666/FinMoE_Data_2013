@@ -12,3 +12,7 @@ __pycache__/
 hf_token.txt
 *.token
 logs/
+
+# 2017 run state
+/year2017/.state/
+/year2017/data/

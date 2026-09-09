@@ -22,8 +22,8 @@ from transformers import AutoTokenizer
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = ROOT / "processing_config.json"
-SAMPLE_DIR = ROOT / "sample" / "train"
+DEFAULT_CONFIG_PATH = ROOT / "processing_config.json"
+DEFAULT_SAMPLE_DIR = ROOT / "sample" / "train"
 PACKAGES = ("huggingface-hub", "numpy", "pyarrow", "tokenizers", "transformers")
 
 
@@ -78,15 +78,17 @@ def count_batch(tokenizer: Any, texts: list[str]) -> list[int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    parser.add_argument("--sample-dir", type=Path, default=DEFAULT_SAMPLE_DIR)
     parser.add_argument("--batch-size", type=int, default=64)
     args = parser.parse_args()
 
-    config = json.loads(CONFIG_PATH.read_text())
+    config = json.loads(args.config.read_text())
     tokenizer_settings = config["tokenizer"]
     tokenizer = build_tokenizer(tokenizer_settings)
 
     documents: list[dict[str, Any]] = []
-    for parquet_path in sorted(SAMPLE_DIR.glob("*.parquet")):
+    for parquet_path in sorted(args.sample_dir.glob("*.parquet")):
         table = pq.read_table(parquet_path)
         texts = table.column("text").to_pylist()
         stored = table.column("token_count").to_pylist()

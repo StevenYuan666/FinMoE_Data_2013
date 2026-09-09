@@ -23,6 +23,12 @@ configs:
 Every 2013 FineWeb-Edu document, prepared for continued pretraining, with token
 counts computed by a pinned Qwen2-7B tokenizer.
 
+The pipeline is year-agnostic: the year, source revision, tokenizer contract,
+and selection rule all come from a config file. 2013 uses
+`processing_config.json`. The 2017 companion dataset, which is large enough to
+require shuffling and a token budget rather than retaining everything, is at
+[`stevenyuan666/fineweb-edu-2017-qwen2-7b`](https://huggingface.co/datasets/stevenyuan666/fineweb-edu-2017-qwen2-7b).
+
 The full year is complete and published under `data/train/`. The 100-document
 validation sample used to agree the format is kept under `sample/train/`.
 
@@ -163,7 +169,7 @@ The sample:
 
 ```bash
 HF_HOME="$PWD/.cache/huggingface" \
-  .venv/bin/python -m process_fineweb_2013 \
+  .venv/bin/python -m process_fineweb_edu \
   --mode sample \
   --rows-per-shard 50
 HF_HOME="$PWD/.cache/huggingface" .venv/bin/pytest -q
@@ -174,7 +180,7 @@ The full year (~41 GiB of output):
 ```bash
 export HF_TOKEN=<a token with write access>
 HF_HOME="$HOME/hf-cache" \
-  .venv/bin/python -m process_fineweb_2013 \
+  .venv/bin/python -m process_fineweb_edu \
   --mode full \
   --output-root "$HOME/fineweb-2013" \
   --batch-size 2048 \

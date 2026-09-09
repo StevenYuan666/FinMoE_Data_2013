@@ -1,0 +1,234 @@
+{
+  "mode": "sample",
+  "year": 2017,
+  "rows": 100,
+  "token_count": 73477,
+  "source_configs": [
+    {
+      "source_config": "CC-MAIN-2017-04",
+      "rows": 8,
+      "token_count": 4336,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-09",
+      "rows": 9,
+      "token_count": 9504,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-13",
+      "rows": 10,
+      "token_count": 4943,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-17",
+      "rows": 10,
+      "token_count": 12937,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-22",
+      "rows": 8,
+      "token_count": 3439,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-26",
+      "rows": 8,
+      "token_count": 4750,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-30",
+      "rows": 8,
+      "token_count": 9426,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-34",
+      "rows": 8,
+      "token_count": 5606,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-39",
+      "rows": 7,
+      "token_count": 6277,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-43",
+      "rows": 9,
+      "token_count": 4306,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-47",
+      "rows": 7,
+      "token_count": 2691,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    },
+    {
+      "source_config": "CC-MAIN-2017-51",
+      "rows": 8,
+      "token_count": 5262,
+      "shards": 1,
+      "token_quota": null,
+      "quota_reached": false,
+      "source_exhausted": false
+    }
+  ],
+  "partial": false,
+  "dumps_processed": [
+    "CC-MAIN-2017-04",
+    "CC-MAIN-2017-09",
+    "CC-MAIN-2017-13",
+    "CC-MAIN-2017-17",
+    "CC-MAIN-2017-22",
+    "CC-MAIN-2017-26",
+    "CC-MAIN-2017-30",
+    "CC-MAIN-2017-34",
+    "CC-MAIN-2017-39",
+    "CC-MAIN-2017-43",
+    "CC-MAIN-2017-47",
+    "CC-MAIN-2017-51"
+  ],
+  "dumps_in_config": [
+    "CC-MAIN-2017-04",
+    "CC-MAIN-2017-09",
+    "CC-MAIN-2017-13",
+    "CC-MAIN-2017-17",
+    "CC-MAIN-2017-22",
+    "CC-MAIN-2017-26",
+    "CC-MAIN-2017-30",
+    "CC-MAIN-2017-34",
+    "CC-MAIN-2017-39",
+    "CC-MAIN-2017-43",
+    "CC-MAIN-2017-47",
+    "CC-MAIN-2017-51"
+  ],
+  "processing_config": {
+    "year": 2017,
+    "source": {
+      "dataset": "HuggingFaceFW/fineweb-edu",
+      "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+      "configs": {
+        "CC-MAIN-2017-04": 14757515,
+        "CC-MAIN-2017-09": 15077917,
+        "CC-MAIN-2017-13": 17739008,
+        "CC-MAIN-2017-17": 17530228,
+        "CC-MAIN-2017-22": 13014405,
+        "CC-MAIN-2017-26": 13922284,
+        "CC-MAIN-2017-30": 12899419,
+        "CC-MAIN-2017-34": 13744675,
+        "CC-MAIN-2017-39": 12816491,
+        "CC-MAIN-2017-43": 14942282,
+        "CC-MAIN-2017-47": 13165488,
+        "CC-MAIN-2017-51": 12146075
+      },
+      "text_field": "text",
+      "preserve_text_exactly": true
+    },
+    "tokenizer": {
+      "checkpoint": "Qwen/Qwen2-7B",
+      "revision": "453ed1575b739b5b03ce3758b23befdb0967f40e",
+      "use_fast": true,
+      "add_special_tokens": false,
+      "truncation": false,
+      "padding": false,
+      "text_normalization_before_tokenization": "none",
+      "count_definition": "len(input_ids)"
+    },
+    "output": {
+      "columns": {
+        "date": "int32",
+        "text": "string",
+        "token_count": "int32"
+      },
+      "format": "parquet",
+      "compression": "zstd",
+      "split": "train"
+    },
+    "target_tokens": 100000000000,
+    "selection": {
+      "applies_to": "--mode full (the published dataset)",
+      "rule": "token_budget",
+      "shuffle": true,
+      "subset": true,
+      "random_seed": 20170101,
+      "shuffle_buffer_size": 50000,
+      "quota_allocation": "proportional_to_available_rows",
+      "quota_rounding": "cumulative floor division over dump names in sorted order, so the per-dump quotas sum exactly to target_tokens and do not depend on config ordering or on which worker computes them",
+      "stop_condition": "within each dump, emit documents until cumulative tokens reach that dump's quota; the document that crosses the quota is kept",
+      "overshoot": "at most one document per dump, which is why the year total is approximately rather than exactly target_tokens",
+      "method": "Each dump is shuffled with the seed above (datasets IterableDataset.shuffle randomises shard order and maintains a shuffle_buffer_size reservoir), then documents are consumed in that shuffled order until the dump's token quota is met. Quotas are proportional to dump size, so all 12 dumps of the year contribute in proportion to their document counts.",
+      "coverage_note": "Because a dump stops once its quota is met, it contributes a randomly chosen portion of its shards rather than a uniform sample of every shard. Which portion is random per the seed, and all 12 dumps are represented proportionally.",
+      "fewer_tokens_than_target": "If a dump's source is exhausted before its quota is met, everything available is retained and the checkpoint records exhausted=true. If that happens for every dump the year is retained in full, matching the instruction to keep all data when a year is smaller than the target.",
+      "documents_available": 171755787,
+      "estimated_tokens_available": 168148323870,
+      "estimated_tokens_available_note": "Extrapolated from 36,000 sampled documents across dumps 04, 22 and 39 at 979.0 tokens per document. The authoritative total comes from the full run."
+    },
+    "sample_mode": {
+      "applies_to": "--mode sample only; NOT used for the published full run",
+      "purpose": "Produce a small excerpt for format and token-count review before the full run",
+      "method": "100 documents allocated across the 12 dumps in proportion to dump size, drawn with the same shuffle seed and buffer as the full run, so the sample is the leading portion of what the full run emits for each dump",
+      "total_rows": 100,
+      "shuffle": true,
+      "random_seed": 20170101,
+      "shuffle_buffer_size": 50000
+    }
+  },
+  "counting": {
+    "implementation": "backend_fast",
+    "requested": "auto",
+    "batch_size": 1024,
+    "note": "All implementations return len(input_ids) with add_special_tokens=False and no truncation or padding; the choice affects speed only"
+  },
+  "runtime": {
+    "python": "3.11.15",
+    "platform": "Linux-5.10.262-267.1063.amzn2int.x86_64-x86_64-with-glibc2.26",
+    "packages": {
+      "datasets": "4.0.0",
+      "huggingface-hub": "1.30.0",
+      "numpy": "1.26.4",
+      "pyarrow": "17.0.0",
+      "tokenizers": "0.22.2",
+      "transformers": "5.0.0"
+    }
+  }
+}

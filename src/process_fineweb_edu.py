@@ -1,4 +1,20 @@
-"""Stream, tokenize, shard, and optionally upload FineWeb-Edu 2013."""
+"""Stream, tokenize, shard, and optionally upload one year of FineWeb-Edu.
+
+The year, the source revision, the tokenizer contract, and the selection rule
+all come from a config file, so a year is added by adding a config rather than
+by editing this module.
+
+Two selection rules are supported:
+
+``retain_all``
+    Emit every document of every dump. Used when the year is smaller than the
+    token target.
+
+``token_budget``
+    Shuffle each dump and emit documents until that dump's share of the year's
+    token budget is met. Each dump's share is derived from the config alone, so
+    parallel workers agree on the split without sharing state.
+"""
 
 from __future__ import annotations
 
@@ -23,6 +39,7 @@ from transformers import AutoTokenizer
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = ROOT / "processing_config.json"
+SELECTION_RULES = ("retain_all", "token_budget")
 SCHEMA = pa.schema(
     [
         pa.field("date", pa.int32(), nullable=False),
@@ -37,12 +54,15 @@ class Progress:
     rows: int = 0
     tokens: int = 0
     shards: int = 0
+    exhausted: bool = False
 
     @classmethod
     def load(cls, path: Path) -> "Progress":
         if not path.exists():
             return cls()
-        return cls(**json.loads(path.read_text()))
+        payload = json.loads(path.read_text())
+        # Checkpoints written before 'exhausted' existed stay loadable.
+        return cls(**{key: payload[key] for key in payload if key in cls.__annotations__})
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -60,26 +80,151 @@ def format_duration(seconds: float) -> str:
     return f"{hours:d}:{minutes:02d}:{secs:02d}"
 
 
+def allocate(total: int, weights: dict[str, int]) -> dict[str, int]:
+    """Split ``total`` across keys in proportion to ``weights``, summing exactly.
+
+    Cumulative floor division guarantees the parts sum to ``total`` with no
+    drift, and iterating keys in sorted order makes the result depend only on
+    the key/weight pairs. That independence matters: every parallel worker
+    recomputes the whole split and must arrive at the same numbers without
+    coordinating.
+    """
+    if total < 0:
+        raise ValueError("Cannot allocate a negative total")
+    weight_total = sum(weights.values())
+    if weight_total <= 0:
+        raise ValueError("Allocation weights must sum to a positive value")
+
+    parts: dict[str, int] = {}
+    boundary_before = 0
+    cumulative_weight = 0
+    for name in sorted(weights):
+        if weights[name] < 0:
+            raise ValueError(f"Weight for {name} is negative")
+        cumulative_weight += weights[name]
+        boundary = total * cumulative_weight // weight_total
+        parts[name] = boundary - boundary_before
+        boundary_before = boundary
+    return parts
+
+
+@dataclass
+class ConfigPlan:
+    """What one dump must produce, derived from the config and the mode."""
+
+    source_config: str
+    available_rows: int
+    row_target: int | None
+    token_quota: int | None
+    shuffle: bool
+    seed: int | None
+    buffer_size: int | None
+
+    @property
+    def target_description(self) -> str:
+        if self.token_quota is not None:
+            return f"{self.token_quota:,} tokens"
+        return f"{self.row_target:,} rows"
+
+
+def build_plans(settings: dict[str, Any], mode: str, sample_rows_override: int | None) -> dict[str, ConfigPlan]:
+    """Derive every dump's plan from the whole config, never from a subset.
+
+    Plans are always computed for all dumps in the config, even when a worker
+    only processes some of them, so a worker's quota does not depend on which
+    slice it was given.
+    """
+    available = dict(settings["source"]["configs"])
+
+    if mode == "sample":
+        sample_settings = settings["sample_mode"]
+        if sample_rows_override is not None:
+            row_targets = {name: sample_rows_override for name in available}
+        elif "total_rows" in sample_settings:
+            row_targets = allocate(int(sample_settings["total_rows"]), available)
+        else:
+            per_config = int(sample_settings["rows_per_config"])
+            row_targets = {name: per_config for name in available}
+        shuffle = bool(sample_settings.get("shuffle", False))
+        seed = sample_settings.get("random_seed")
+        buffer_size = sample_settings.get("shuffle_buffer_size")
+        return {
+            name: ConfigPlan(
+                source_config=name,
+                available_rows=available[name],
+                row_target=row_targets[name],
+                token_quota=None,
+                shuffle=shuffle,
+                seed=seed,
+                buffer_size=buffer_size,
+            )
+            for name in available
+        }
+
+    selection = settings["selection"]
+    rule = selection["rule"]
+    if rule not in SELECTION_RULES:
+        raise ValueError(f"Unknown selection rule {rule!r}; expected one of {SELECTION_RULES}")
+
+    if rule == "retain_all":
+        return {
+            name: ConfigPlan(
+                source_config=name,
+                available_rows=available[name],
+                row_target=available[name],
+                token_quota=None,
+                shuffle=bool(selection.get("shuffle", False)),
+                seed=selection.get("random_seed"),
+                buffer_size=selection.get("shuffle_buffer_size"),
+            )
+            for name in available
+        }
+
+    budget = int(settings["target_tokens"])
+    quotas = allocate(budget, available)
+    if not selection.get("shuffle", False):
+        raise ValueError(
+            "token_budget selects a subset of the year, so it requires shuffle=true "
+            "to avoid biasing the result toward the source order"
+        )
+    seed = selection.get("random_seed")
+    if seed is None:
+        raise ValueError("token_budget requires an explicit random_seed to stay reproducible")
+    return {
+        name: ConfigPlan(
+            source_config=name,
+            available_rows=available[name],
+            row_target=None,
+            token_quota=quotas[name],
+            shuffle=True,
+            seed=int(seed),
+            buffer_size=int(selection.get("shuffle_buffer_size", 10_000)),
+        )
+        for name in available
+    }
+
+
 class ProgressReporter:
     """Emit periodic progress lines so a long run is observable while it works.
 
     Reporting is purely observational: it never touches the text, the token
-    counts, or the checkpoints. ``rows_at_start`` is the resume point so the
-    rate and ETA describe the current process, while the percentage describes
-    the whole config.
+    counts, or the checkpoints. Progress is measured against rows when the
+    target is a row count and against tokens when the target is a budget.
     """
 
     def __init__(
         self,
         *,
         label: str,
-        target_rows: int,
+        row_target: int | None,
+        token_target: int | None,
         rows_at_start: int,
         interval: float,
         stream: Any = None,
     ) -> None:
         self.label = label
-        self.target_rows = target_rows
+        self.row_target = row_target
+        self.token_target = token_target
         self.rows_at_start = rows_at_start
         self.interval = interval
         self.stream = stream if stream is not None else sys.stdout
@@ -91,17 +236,27 @@ class ProgressReporter:
         elapsed = now - self.started
         processed = max(0, rows_done - self.rows_at_start)
         rate = processed / elapsed if elapsed > 0 else 0.0
-        remaining = max(0, self.target_rows - rows_done)
-        eta = remaining / rate if rate > 0 else float("inf")
-        percent = (rows_done / self.target_rows * 100) if self.target_rows else 100.0
+
+        if self.token_target:
+            done, target, unit = tokens_done, self.token_target, "tokens"
+            token_rate = tokens_done / elapsed if elapsed > 0 else 0.0
+            eta = (target - tokens_done) / token_rate if token_rate > 0 else float("inf")
+        else:
+            done, target, unit = rows_done, self.row_target or 0, "rows"
+            eta = (target - rows_done) / rate if rate > 0 else float("inf")
+
+        percent = (done / target * 100) if target else 100.0
+        counters = (
+            f"rows {rows_done:,} tokens {tokens_done:,}/{target:,}"
+            if unit == "tokens"
+            else f"rows {rows_done:,}/{target:,} tokens {tokens_done:,}"
+        )
         suffix = f" {event}" if event else ""
         print(
-            f"[progress] {self.label} "
-            f"rows {rows_done:,}/{self.target_rows:,} ({percent:.2f}%) "
-            f"tokens {tokens_done:,} "
+            f"[progress] {self.label} {counters} ({percent:.2f}%) "
             f"rate {rate:,.0f} doc/s "
             f"elapsed {format_duration(elapsed)} "
-            f"eta {format_duration(eta)}{suffix}",
+            f"eta {format_duration(max(0.0, eta))}{suffix}",
             file=self.stream,
             flush=True,
         )
@@ -119,11 +274,17 @@ def load_config(path: Path) -> dict[str, Any]:
 
 
 def runtime_metadata() -> dict[str, Any]:
-    packages = ("datasets", "huggingface-hub", "pyarrow", "tokenizers", "transformers")
+    packages = ("datasets", "huggingface-hub", "numpy", "pyarrow", "tokenizers", "transformers")
+    versions: dict[str, str] = {}
+    for name in packages:
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            versions[name] = "not installed"
     return {
         "python": platform.python_version(),
         "platform": platform.platform(),
-        "packages": {name: importlib.metadata.version(name) for name in packages},
+        "packages": versions,
     }
 
 
@@ -237,31 +398,37 @@ def load_progress(state_path: Path, repo_id: str | None, mode: str, source_confi
     return Progress.load(Path(downloaded))
 
 
+def plan_is_complete(plan: ConfigPlan, progress: Progress) -> bool:
+    if plan.token_quota is not None:
+        return progress.tokens >= plan.token_quota or progress.exhausted
+    return progress.rows >= (plan.row_target or 0)
+
+
 def process_source_config(
     *,
-    source_config: str,
-    expected_rows: int,
+    plan: ConfigPlan,
     settings: dict[str, Any],
     counter: Any,
     mode: str,
     output_root: Path,
     batch_size: int,
     rows_per_shard: int,
-    sample_rows: int,
     repo_id: str | None,
     delete_after_upload: bool,
     progress_interval: float = 30.0,
 ) -> dict[str, Any]:
+    source_config = plan.source_config
     destination = "sample" if mode == "sample" else "data"
     output_dir = output_root / destination / "train"
     output_dir.mkdir(parents=True, exist_ok=True)
     state_path = output_root / ".state" / f"{mode}-{source_config}.json"
     progress = load_progress(state_path, repo_id, mode, source_config)
-    target_rows = sample_rows if mode == "sample" else expected_rows
 
-    if progress.rows > target_rows:
-        raise ValueError(f"Checkpoint has {progress.rows} rows, beyond target {target_rows}")
-    if progress.rows == target_rows:
+    if plan.row_target is not None and progress.rows > plan.row_target:
+        raise ValueError(
+            f"Checkpoint has {progress.rows} rows, beyond target {plan.row_target}"
+        )
+    if plan_is_complete(plan, progress):
         print(
             f"[progress] {source_config} already complete at {progress.rows:,} rows "
             f"({progress.tokens:,} tokens, {progress.shards} shards); skipping",
@@ -272,11 +439,16 @@ def process_source_config(
             "rows": progress.rows,
             "token_count": progress.tokens,
             "shards": progress.shards,
+            "token_quota": plan.token_quota,
+            "quota_reached": plan.token_quota is not None
+            and progress.tokens >= plan.token_quota,
+            "source_exhausted": progress.exhausted,
         }
 
     reporter = ProgressReporter(
         label=source_config,
-        target_rows=target_rows,
+        row_target=plan.row_target,
+        token_target=plan.token_quota,
         rows_at_start=progress.rows,
         interval=progress_interval,
     )
@@ -286,7 +458,7 @@ def process_source_config(
             f"({progress.shards} shards already done); the stream must re-skip those rows",
             flush=True,
         )
-    reporter.emit(progress.rows, progress.tokens, event="start")
+    reporter.emit(progress.rows, progress.tokens, event=f"start, target {plan.target_description}")
 
     source = settings["source"]
     stream = load_dataset(
@@ -296,16 +468,22 @@ def process_source_config(
         revision=source["revision"],
         streaming=True,
     )
+    # Shuffle before skipping so the stream order is a pure function of the
+    # seed. Resuming then replays the same order and skips the same prefix.
+    if plan.shuffle:
+        stream = stream.shuffle(seed=plan.seed, buffer_size=plan.buffer_size)
     if progress.rows:
         stream = stream.skip(progress.rows)
-    stream = stream.take(target_rows - progress.rows)
+    if plan.row_target is not None:
+        stream = stream.take(plan.row_target - progress.rows)
 
     api = HfApi() if repo_id else None
     shard_rows: list[str] = []
     shard_counts: list[int] = []
+    buffered_tokens = 0
 
     def flush_shard() -> None:
-        nonlocal shard_rows, shard_counts
+        nonlocal shard_rows, shard_counts, buffered_tokens
         if not shard_rows:
             return
         filename = f"{source_config}-{progress.shards:05d}.parquet"
@@ -341,36 +519,80 @@ def process_source_config(
             final_path.unlink()
         shard_rows = []
         shard_counts = []
+        buffered_tokens = 0
         reporter.emit(
             progress.rows,
             progress.tokens,
             event=f"shard {progress.shards} written{' and uploaded' if api is not None else ''}: {filename}",
         )
 
+    quota_reached = False
+    saw_any_batch = False
     for texts in batched_texts(stream, batch_size):
+        saw_any_batch = True
         lengths = count_tokens(counter, texts)
+
+        if plan.token_quota is not None:
+            # Keep the document that crosses the quota rather than dropping it.
+            # Stopping just below would systematically discard the longest
+            # candidate at the boundary; keeping it overshoots by at most one
+            # document per dump, which is why the target is "approximately".
+            running = progress.tokens + buffered_tokens
+            keep = len(texts)
+            for index, length in enumerate(lengths):
+                running += length
+                if running >= plan.token_quota:
+                    keep = index + 1
+                    quota_reached = True
+                    break
+            texts = texts[:keep]
+            lengths = lengths[:keep]
+
         offset = 0
         while offset < len(texts):
             capacity = rows_per_shard - len(shard_rows)
             end = min(offset + capacity, len(texts))
             shard_rows.extend(texts[offset:end])
             shard_counts.extend(lengths[offset:end])
+            buffered_tokens += sum(lengths[offset:end])
             offset = end
             if len(shard_rows) == rows_per_shard:
                 flush_shard()
-        reporter.maybe_emit(progress.rows + len(shard_rows), progress.tokens + sum(shard_counts))
+
+        if quota_reached:
+            break
+        reporter.maybe_emit(progress.rows + len(shard_rows), progress.tokens + buffered_tokens)
+
+    # The stream ran dry before the quota was met. For a token budget that is a
+    # legitimate outcome: the dump simply holds fewer tokens than its share, and
+    # the instruction is to keep everything in that case.
+    source_exhausted = plan.token_quota is not None and not quota_reached and saw_any_batch
     flush_shard()
+    if source_exhausted:
+        progress.exhausted = True
+        progress.save(state_path)
     reporter.emit(progress.rows, progress.tokens, event="config complete")
 
-    if progress.rows != target_rows:
+    if plan.row_target is not None and progress.rows != plan.row_target:
         raise RuntimeError(
-            f"{source_config}: source ended at {progress.rows:,} rows; expected {target_rows:,}"
+            f"{source_config}: source ended at {progress.rows:,} rows; "
+            f"expected {plan.row_target:,}"
+        )
+    if plan.token_quota is not None and not quota_reached and not progress.exhausted:
+        raise RuntimeError(
+            f"{source_config}: stopped at {progress.tokens:,} tokens without reaching "
+            f"its quota of {plan.token_quota:,} and without exhausting the source"
         )
     return {
         "source_config": source_config,
         "rows": progress.rows,
         "token_count": progress.tokens,
         "shards": progress.shards,
+        "token_quota": plan.token_quota,
+        "quota_reached": bool(quota_reached) or (
+            plan.token_quota is not None and progress.tokens >= plan.token_quota
+        ),
+        "source_exhausted": bool(progress.exhausted),
     }
 
 
@@ -400,6 +622,22 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--rows-per-shard", type=int, default=50_000)
     parser.add_argument("--sample-rows-per-config", type=int)
+    parser.add_argument(
+        "--source-configs",
+        nargs="+",
+        help=(
+            "Process only these dumps. Quotas are still derived from the whole "
+            "config, so splitting dumps across parallel workers does not change "
+            "what any worker produces"
+        ),
+    )
+    parser.add_argument(
+        "--report-name",
+        help=(
+            "Report filename, relative to the output root. Parallel workers must "
+            "each pass a distinct name; merge them with scripts/merge_reports.py"
+        ),
+    )
     parser.add_argument("--repo-id", help="Upload shards to this dataset repository")
     parser.add_argument(
         "--delete-after-upload",
@@ -444,11 +682,15 @@ def main() -> None:
 
     count_implementation = resolve_count_implementation(tokenizer, args.count_impl)
     counter = make_counter(tokenizer, count_implementation)
-    print(
-        f"[progress] counting via '{count_implementation}' "
-        f"(requested '{args.count_impl}'), batch size {args.batch_size}",
-        flush=True,
-    )
+
+    plans = build_plans(settings, args.mode, args.sample_rows_per_config)
+    if args.source_configs:
+        unknown = sorted(set(args.source_configs) - set(plans))
+        if unknown:
+            raise ValueError(f"Unknown source configs: {unknown}")
+        selected = [plans[name] for name in args.source_configs]
+    else:
+        selected = [plans[name] for name in sorted(plans)]
 
     if args.repo_id:
         HfApi().create_repo(
@@ -458,46 +700,46 @@ def main() -> None:
             exist_ok=True,
         )
 
-    sample_rows = (
-        args.sample_rows_per_config
-        if args.sample_rows_per_config is not None
-        else settings["sample_mode"]["rows_per_config"]
-    )
-    total_target = (
-        sum(settings["source"]["configs"].values())
-        if args.mode == "full"
-        else sample_rows * len(settings["source"]["configs"])
+    rule = "sample" if args.mode == "sample" else settings["selection"]["rule"]
+    print(
+        f"[progress] counting via '{count_implementation}' "
+        f"(requested '{args.count_impl}'), batch size {args.batch_size}",
+        flush=True,
     )
     print(
-        f"[progress] starting {args.mode} run: {total_target:,} target rows across "
-        f"{len(settings['source']['configs'])} source configs, "
+        f"[progress] starting {args.mode} run, selection '{rule}', "
+        f"{len(selected)} of {len(plans)} dumps, "
         f"{args.rows_per_shard:,} rows per shard, output root {args.output_root}",
         flush=True,
     )
-    run_started = time.monotonic()
+    for plan in selected:
+        detail = f"target {plan.target_description}"
+        if plan.shuffle:
+            detail += f", shuffled seed={plan.seed} buffer={plan.buffer_size:,}"
+        print(f"[progress]   {plan.source_config}: {detail}", flush=True)
 
+    run_started = time.monotonic()
     reports = []
-    for source_config, expected_rows in settings["source"]["configs"].items():
+    for plan in selected:
         reports.append(
             process_source_config(
-                source_config=source_config,
-                expected_rows=expected_rows,
+                plan=plan,
                 settings=settings,
                 counter=counter,
                 mode=args.mode,
                 output_root=args.output_root,
                 batch_size=args.batch_size,
                 rows_per_shard=args.rows_per_shard,
-                sample_rows=sample_rows,
                 repo_id=args.repo_id,
                 delete_after_upload=args.delete_after_upload,
                 progress_interval=args.progress_interval,
             )
         )
         done_rows = sum(item["rows"] for item in reports)
+        done_tokens = sum(item["token_count"] for item in reports)
         print(
-            f"[progress] finished {source_config}; run total {done_rows:,}/{total_target:,} rows "
-            f"({done_rows / total_target * 100:.2f}%) "
+            f"[progress] finished {plan.source_config}; worker total "
+            f"{done_rows:,} rows / {done_tokens:,} tokens "
             f"after {format_duration(time.monotonic() - run_started)}",
             flush=True,
         )
@@ -508,6 +750,9 @@ def main() -> None:
         "rows": sum(item["rows"] for item in reports),
         "token_count": sum(item["token_count"] for item in reports),
         "source_configs": reports,
+        "partial": bool(args.source_configs) and len(selected) != len(plans),
+        "dumps_processed": [plan.source_config for plan in selected],
+        "dumps_in_config": sorted(plans),
         "processing_config": settings,
         "counting": {
             "implementation": count_implementation,
@@ -521,15 +766,12 @@ def main() -> None:
         },
         "runtime": runtime_metadata(),
     }
-    report_path = args.output_root / f"{args.mode}_report.json"
+    report_name = args.report_name or f"{args.mode}_report.json"
+    report_path = args.output_root / report_name
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + "\n")
     if args.repo_id:
-        upload_shard(
-            HfApi(),
-            args.repo_id,
-            report_path,
-            f"{args.mode}_report.json",
-        )
+        upload_shard(HfApi(), args.repo_id, report_path, report_name)
     print(
         f"[progress] {args.mode} run complete: {report['rows']:,} rows, "
         f"{report['token_count']:,} tokens, "
