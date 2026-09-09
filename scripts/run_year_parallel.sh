@@ -16,7 +16,7 @@ set -euo pipefail
 
 CONFIG="${1:?usage: run_year_parallel.sh <config> <output-root> [workers]}"
 OUTPUT_ROOT="${2:?usage: run_year_parallel.sh <config> <output-root> [workers]}"
-WORKERS="${3:-4}"
+WORKERS="${3:-1}"
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="$REPO_DIR/.venv/bin/python"
@@ -25,9 +25,23 @@ LOG_DIR="$REPO_DIR/logs"
 : "${HF_HOME:=$HOME/hf-cache}"
 export HF_HOME
 
-# Tuned from measurement on this host: batch 2048 with encode_batch_fast reaches
-# ~4,990 docs/s of tokenization, and 100k rows per shard keeps each worker near
-# 2 GB so four of them fit in 15 GiB. Eight workers OOM-kill.
+# Memory measured on this host, one worker, streaming a real 2017 dump:
+#
+#   rows/shard  shuffle buffer  peak RSS
+#   100,000     50,000          5.00 GB
+#    50,000     50,000          4.53 GB
+#    25,000     50,000          4.18 GB
+#    25,000     10,000          3.69 GB
+#    25,000      2,000          3.51 GB
+#
+# The important finding is that neither buffer dominates: there is a ~3.5 GB
+# floor from the streaming reader and the tokenizer that shrinking them does not
+# touch. So a worker costs 3.5-5 GB, and on 15 GiB of RAM that means ONE worker
+# comfortably, two with care, and four get OOM-killed. Four were tried and two
+# died at 3.5 GB and 4.8 GB RSS.
+#
+# Default to a single worker for that reason. Raise it only after measuring
+# peak RSS on the machine you are actually using.
 BATCH_SIZE="${BATCH_SIZE:-2048}"
 ROWS_PER_SHARD="${ROWS_PER_SHARD:-100000}"
 PROGRESS_INTERVAL="${PROGRESS_INTERVAL:-30}"
