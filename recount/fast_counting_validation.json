@@ -1,0 +1,44 @@
+{
+  "sources": [
+    "sample/CC-MAIN-2013-20-00000.parquet",
+    "sample/CC-MAIN-2013-48-00000.parquet",
+    "published/CC-MAIN-2013-48-00021.parquet#rg0",
+    "published/CC-MAIN-2013-48-00008.parquet#rg0",
+    "published/CC-MAIN-2013-20-00038.parquet#rg0",
+    "published/CC-MAIN-2013-48-00001.parquet#rg0",
+    "published/CC-MAIN-2013-20-00037.parquet#rg0",
+    "published/CC-MAIN-2013-20-00022.parquet#rg0"
+  ],
+  "tokenizers_version": "0.22.2",
+  "implementations_tested": [
+    "backend",
+    "backend_fast",
+    "transformers"
+  ],
+  "results": {
+    "transformers": {
+      "rows": 18100,
+      "tokens": 18867551,
+      "mismatches": [],
+      "mismatch_count": 0,
+      "matches_stored": true
+    },
+    "backend": {
+      "rows": 18100,
+      "tokens": 18867551,
+      "mismatches": [],
+      "mismatch_count": 0,
+      "matches_stored": true
+    },
+    "backend_fast": {
+      "rows": 18100,
+      "tokens": 18867551,
+      "mismatches": [],
+      "mismatch_count": 0,
+      "matches_stored": true
+    }
+  },
+  "all_agree_with_stored": true,
+  "all_agree_with_each_other": true,
+  "verdict": "PASS"
+}

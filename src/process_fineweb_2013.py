@@ -141,15 +141,72 @@ def batched_texts(records: Iterable[dict[str, Any]], batch_size: int) -> Iterabl
         yield batch
 
 
-def count_tokens(tokenizer: Any, texts: list[str]) -> list[int]:
-    encoded = tokenizer(
-        texts,
-        add_special_tokens=False,
-        truncation=False,
-        padding=False,
-        return_length=True,
+COUNT_IMPLEMENTATIONS = ("auto", "transformers", "backend", "backend_fast")
+
+
+def resolve_count_implementation(tokenizer: Any, requested: str) -> str:
+    """Pick the counting implementation, preferring the fastest available.
+
+    All three implementations are verified to return identical counts; they
+    differ only in how much work is done outside the token count itself.
+    ``encode_batch_fast`` skips the offset bookkeeping that the counting
+    contract never reads, and avoids building a ``BatchEncoding``, which is
+    where the Python-side serial time goes.
+    """
+    backend = getattr(tokenizer, "backend_tokenizer", None)
+    has_fast = backend is not None and hasattr(backend, "encode_batch_fast")
+
+    if requested == "auto":
+        if has_fast:
+            return "backend_fast"
+        if backend is not None:
+            return "backend"
+        return "transformers"
+    if requested == "backend_fast" and not has_fast:
+        raise RuntimeError(
+            "encode_batch_fast is unavailable; it needs tokenizers>=0.20 "
+            "(this environment has an older build)"
+        )
+    if requested == "backend" and backend is None:
+        raise RuntimeError("The tokenizer exposes no backend_tokenizer")
+    return requested
+
+
+def make_counter(tokenizer: Any, implementation: str) -> Any:
+    """Return a callable mapping a batch of texts to token counts.
+
+    Every branch computes ``len(input_ids)`` with ``add_special_tokens=False``
+    and no truncation or padding, which is the published contract.
+    """
+    if implementation == "transformers":
+
+        def count(texts: list[str]) -> list[int]:
+            encoded = tokenizer(
+                texts,
+                add_special_tokens=False,
+                truncation=False,
+                padding=False,
+                return_length=True,
+            )
+            return [int(length) for length in encoded["length"]]
+
+        return count
+
+    backend = tokenizer.backend_tokenizer
+    encode = (
+        backend.encode_batch_fast
+        if implementation == "backend_fast"
+        else backend.encode_batch
     )
-    lengths = [int(length) for length in encoded["length"]]
+
+    def count(texts: list[str]) -> list[int]:
+        return [len(item.ids) for item in encode(texts, add_special_tokens=False)]
+
+    return count
+
+
+def count_tokens(counter: Any, texts: list[str]) -> list[int]:
+    lengths = counter(texts)
     if any(length > 2_147_483_647 for length in lengths):
         raise OverflowError("A document token count exceeds the int32 output range")
     return lengths
@@ -185,7 +242,7 @@ def process_source_config(
     source_config: str,
     expected_rows: int,
     settings: dict[str, Any],
-    tokenizer: Any,
+    counter: Any,
     mode: str,
     output_root: Path,
     batch_size: int,
@@ -291,7 +348,7 @@ def process_source_config(
         )
 
     for texts in batched_texts(stream, batch_size):
-        lengths = count_tokens(tokenizer, texts)
+        lengths = count_tokens(counter, texts)
         offset = 0
         while offset < len(texts):
             capacity = rows_per_shard - len(shard_rows)
@@ -322,7 +379,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mode", choices=("sample", "full"), default="sample")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--output-root", type=Path, default=ROOT)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=1024,
+        help=(
+            "Documents per tokenizer call. Larger batches amortise the serial "
+            "Python work between calls; counts are unaffected by this value"
+        ),
+    )
+    parser.add_argument(
+        "--count-impl",
+        choices=COUNT_IMPLEMENTATIONS,
+        default="auto",
+        help=(
+            "Token counting implementation. 'auto' prefers encode_batch_fast, "
+            "falling back to encode_batch and then the transformers call. All "
+            "produce identical counts"
+        ),
+    )
     parser.add_argument("--rows-per-shard", type=int, default=50_000)
     parser.add_argument("--sample-rows-per-config", type=int)
     parser.add_argument("--repo-id", help="Upload shards to this dataset repository")
@@ -336,6 +411,16 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=30.0,
         help="Seconds between progress lines; 0 disables periodic reporting",
+    )
+    parser.add_argument(
+        "--no-fast-exit",
+        dest="fast_exit",
+        action="store_false",
+        help=(
+            "Let the interpreter finalize normally on success. Finalization "
+            "races with the tokenizer's native threads and can report failure "
+            "for a completed run; use this only for debugging"
+        ),
     )
     return parser.parse_args()
 
@@ -356,6 +441,14 @@ def main() -> None:
     )
     if not tokenizer.is_fast:
         raise RuntimeError("The reproducibility contract requires the fast tokenizer")
+
+    count_implementation = resolve_count_implementation(tokenizer, args.count_impl)
+    counter = make_counter(tokenizer, count_implementation)
+    print(
+        f"[progress] counting via '{count_implementation}' "
+        f"(requested '{args.count_impl}'), batch size {args.batch_size}",
+        flush=True,
+    )
 
     if args.repo_id:
         HfApi().create_repo(
@@ -390,7 +483,7 @@ def main() -> None:
                 source_config=source_config,
                 expected_rows=expected_rows,
                 settings=settings,
-                tokenizer=tokenizer,
+                counter=counter,
                 mode=args.mode,
                 output_root=args.output_root,
                 batch_size=args.batch_size,
@@ -416,6 +509,16 @@ def main() -> None:
         "token_count": sum(item["token_count"] for item in reports),
         "source_configs": reports,
         "processing_config": settings,
+        "counting": {
+            "implementation": count_implementation,
+            "requested": args.count_impl,
+            "batch_size": args.batch_size,
+            "note": (
+                "All implementations return len(input_ids) with "
+                "add_special_tokens=False and no truncation or padding; the "
+                "choice affects speed only"
+            ),
+        },
         "runtime": runtime_metadata(),
     }
     report_path = args.output_root / f"{args.mode}_report.json"
@@ -434,6 +537,20 @@ def main() -> None:
         flush=True,
     )
     print(json.dumps(report, indent=2))
+
+    # The tokenizer's Rayon pool and the streaming HTTP stack keep native
+    # threads alive, and they intermittently touch the GIL while the
+    # interpreter is finalizing. That raises
+    #   Fatal Python error: PyGILState_Release: auto-releasing thread-state
+    # *after* every shard, checkpoint, and report is already durable, turning a
+    # successful run into a non-zero exit roughly half the time. That would
+    # make exit codes useless for orchestrating many parallel dumps, so skip
+    # finalization instead of letting the race mask success. Buffers are
+    # flushed explicitly because os._exit does not flush them.
+    if args.fast_exit:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
 
 
 if __name__ == "__main__":

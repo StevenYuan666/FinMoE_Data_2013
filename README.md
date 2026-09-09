@@ -159,7 +159,7 @@ HF_HOME="$PWD/.cache/huggingface" \
 HF_HOME="$PWD/.cache/huggingface" .venv/bin/pytest -q
 ```
 
-The full year (5h21m wall time on 8 CPUs, ~41 GiB of output):
+The full year (~41 GiB of output):
 
 ```bash
 export HF_TOKEN=<a token with write access>
@@ -167,11 +167,55 @@ HF_HOME="$HOME/hf-cache" \
   .venv/bin/python -m process_fineweb_2013 \
   --mode full \
   --output-root "$HOME/fineweb-2013" \
-  --batch-size 64 \
+  --batch-size 2048 \
   --rows-per-shard 250000 \
   --progress-interval 30 \
   --repo-id stevenyuan666/fineweb-edu-2013-qwen2-7b
 ```
+
+The published 2013 data was produced with `--batch-size 64` and the
+`transformers` counting path in 5h21m. The defaults are now faster, and produce
+identical counts; see below.
+
+## Counting implementation and throughput
+
+`--count-impl` selects how token counts are computed. Every option returns
+`len(input_ids)` with `add_special_tokens=False` and no truncation or padding,
+so they are interchangeable for correctness and differ only in speed:
+
+- `auto` (default): prefers `encode_batch_fast`, falls back to `encode_batch`,
+  then to the `transformers` call
+- `backend_fast`: `backend_tokenizer.encode_batch_fast`, needs tokenizers>=0.20
+- `backend`: `backend_tokenizer.encode_batch`
+- `transformers`: `tokenizer(..., return_length=True)`
+
+Rayon already uses every core by default, so `RAYON_NUM_THREADS` is not the
+lever; setting it above the core count measurably hurts. The limit was serial
+Python work between batches. Measured on 60,000 real documents, 8 cores:
+
+| Configuration | docs/s | cores used |
+|---|---|---|
+| `transformers`, batch 64 | 2,356 | 4.04 |
+| `transformers`, batch 1024 | 2,945 | 5.37 |
+| `encode_batch`, batch 4096 | 3,476 | 6.40 |
+| `encode_batch_fast`, batch 2048 | 4,990 | 6.95 |
+
+Counts were verified identical across all of them, and against the stored
+`token_count` of the published output, by
+`scripts/validate_fast_counting.py` (`recount/fast_counting_validation.json`).
+
+Tokenization is roughly a third of end-to-end wall time, so the same change is
+worth about 1.4x for a whole run rather than 2.1x.
+
+### Exit codes
+
+On success the process calls `os._exit(0)` after flushing, skipping interpreter
+finalization. The tokenizer's Rayon pool and the streaming HTTP stack keep
+native threads alive that intermittently touch the GIL during finalization,
+raising `Fatal Python error: PyGILState_Release` *after* all output is durable.
+Left alone this turns a completed run into a non-zero exit roughly half the
+time, which makes exit codes useless for orchestrating many dumps. Use
+`--no-fast-exit` to restore normal shutdown when debugging.
 
 `HF_TOKEN` must be exported. The pipeline builds `HfApi()` without an explicit
 token, so it resolves the token from the environment or from a token file under

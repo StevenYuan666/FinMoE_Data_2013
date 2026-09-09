@@ -1,0 +1,135 @@
+{
+  "target_tokens_per_year": 100000000000,
+  "per_year": {
+    "2017": {
+      "dumps": 12,
+      "dump_rows": {
+        "CC-MAIN-2017-04": 14757515,
+        "CC-MAIN-2017-09": 15077917,
+        "CC-MAIN-2017-13": 17739008,
+        "CC-MAIN-2017-17": 17530228,
+        "CC-MAIN-2017-22": 13014405,
+        "CC-MAIN-2017-26": 13922284,
+        "CC-MAIN-2017-30": 12899419,
+        "CC-MAIN-2017-34": 13744675,
+        "CC-MAIN-2017-39": 12816491,
+        "CC-MAIN-2017-43": 14942282,
+        "CC-MAIN-2017-47": 13165488,
+        "CC-MAIN-2017-51": 12146075
+      },
+      "total_rows": 171755787,
+      "source_bytes": 485087827730,
+      "source_gib": 451.7732446361333,
+      "sampled_dumps": [
+        "CC-MAIN-2017-04",
+        "CC-MAIN-2017-22",
+        "CC-MAIN-2017-39"
+      ],
+      "sampled_rows": 36000,
+      "tokens_per_row": 978.9965555555556,
+      "utf8_bytes_per_row": 4518.475138888889,
+      "measured_output_bytes_per_row": 1892.327388888889,
+      "projected_tokens_all_rows": 168148323869.73367,
+      "projected_tokens_billions": 168.14832386973367,
+      "exceeds_target": true,
+      "keep_fraction_for_target": 0.5947130348885968,
+      "rows_to_keep_for_target": 102145405.3464494,
+      "output_bytes_all_rows": 325018179940.2662,
+      "output_gib_all_rows": 302.69676813880557,
+      "output_bytes_at_target": 193292548186.24374,
+      "output_gib_at_target": 180.01771363079897
+    },
+    "2018": {
+      "dumps": 12,
+      "dump_rows": {
+        "CC-MAIN-2018-05": 14154001,
+        "CC-MAIN-2018-09": 14265586,
+        "CC-MAIN-2018-13": 13464072,
+        "CC-MAIN-2018-17": 12949912,
+        "CC-MAIN-2018-22": 11497684,
+        "CC-MAIN-2018-26": 14129872,
+        "CC-MAIN-2018-30": 14238868,
+        "CC-MAIN-2018-34": 12736885,
+        "CC-MAIN-2018-39": 12902148,
+        "CC-MAIN-2018-43": 14709378,
+        "CC-MAIN-2018-47": 12646593,
+        "CC-MAIN-2018-51": 14612976
+      },
+      "total_rows": 162307975,
+      "source_bytes": 452656076254,
+      "source_gib": 421.56882235221565,
+      "sampled_dumps": [
+        "CC-MAIN-2018-05",
+        "CC-MAIN-2018-22",
+        "CC-MAIN-2018-39"
+      ],
+      "sampled_rows": 36000,
+      "tokens_per_row": 943.9526111111111,
+      "utf8_bytes_per_row": 4400.622638888889,
+      "measured_output_bytes_per_row": 1846.15175,
+      "projected_tokens_all_rows": 153211036805.40695,
+      "projected_tokens_billions": 153.21103680540696,
+      "exceeds_target": true,
+      "keep_fraction_for_target": 0.652694493067166,
+      "rows_to_keep_for_target": 105937521.46338324,
+      "output_bytes_all_rows": 299645152085.20624,
+      "output_gib_all_rows": 279.0662945110409,
+      "output_bytes_at_target": 195576740640.28754,
+      "output_gib_at_target": 182.14503362801628
+    },
+    "2019": {
+      "dumps": 12,
+      "dump_rows": {
+        "CC-MAIN-2019-04": 12786786,
+        "CC-MAIN-2019-09": 14061130,
+        "CC-MAIN-2019-13": 12759665,
+        "CC-MAIN-2019-18": 12987908,
+        "CC-MAIN-2019-22": 12967617,
+        "CC-MAIN-2019-26": 12489112,
+        "CC-MAIN-2019-30": 12509155,
+        "CC-MAIN-2019-35": 13702766,
+        "CC-MAIN-2019-39": 12031333,
+        "CC-MAIN-2019-43": 13033524,
+        "CC-MAIN-2019-47": 12119652,
+        "CC-MAIN-2019-51": 11150637
+      },
+      "total_rows": 152599285,
+      "source_bytes": 442101214477,
+      "source_gib": 411.7388413073495,
+      "sampled_dumps": [
+        "CC-MAIN-2019-04",
+        "CC-MAIN-2019-22",
+        "CC-MAIN-2019-39"
+      ],
+      "sampled_rows": 36000,
+      "tokens_per_row": 992.7753611111111,
+      "utf8_bytes_per_row": 4628.436416666666,
+      "measured_output_bytes_per_row": 1934.1100833333333,
+      "projected_tokens_all_rows": 151496810271.17236,
+      "projected_tokens_billions": 151.49681027117236,
+      "exceeds_target": true,
+      "keep_fraction_for_target": 0.6600799041313449,
+      "rows_to_keep_for_target": 100727721.41331178,
+      "output_bytes_all_rows": 295143815827.9571,
+      "output_gib_all_rows": 274.8740984387296,
+      "output_bytes_at_target": 194818501656.67722,
+      "output_gib_at_target": 181.4388685456265
+    }
+  },
+  "totals": {
+    "years": [
+      2017,
+      2018,
+      2019
+    ],
+    "total_rows_all": 486663047,
+    "total_rows_at_target": 308810648.2231444,
+    "source_bytes": 1379845118461,
+    "source_tib": 1.254961824507518,
+    "projected_tokens_all": 472856170946.313,
+    "output_gib_all": 856.637161088576,
+    "output_tib_all": 0.8365597276255625,
+    "output_gib_at_target": 543.6016158044417,
+    "output_tib_at_target": 0.5308609529340251
+  }
+}
