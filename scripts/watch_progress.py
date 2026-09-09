@@ -90,7 +90,7 @@ def main() -> None:
     config = json.loads(CONFIG_PATH.read_text())
     targets = dict(config["source"]["configs"])
     if args.mode == "sample":
-        targets = {name: config["sampling"]["rows_per_config"] for name in targets}
+        targets = {name: config["sample_mode"]["rows_per_config"] for name in targets}
 
     previous: tuple[float, int] | None = None
     while True:

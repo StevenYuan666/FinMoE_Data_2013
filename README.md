@@ -139,6 +139,16 @@ Because the year is smaller than the target, every document is kept and the
 source order is preserved. No sampling or shuffling was applied, so no random
 seed affects the contents.
 
+In `processing_config.json` this is the `selection` block
+(`rule: retain_all`, `shuffle: false`, `subset: false`, `random_seed: null`),
+which applies to `--mode full`, that is, to the published data. The separate
+`sample_mode` block (first 50 rows per crawl) applies only to `--mode sample`
+and had no bearing on the full run. Earlier revisions carried those sample
+settings in an unscoped top-level `sampling` block, which could be misread as
+describing the published dataset; `full_report.json` and `sample_report.json`
+record the correction under `metadata_revision`. Only metadata changed — no data
+was reprocessed and no token count moved.
+
 The FineWeb `token_count` column is GPT-2 based and is not reused; every count
 here is computed from scratch with the pinned Qwen2-7B tokenizer.
 

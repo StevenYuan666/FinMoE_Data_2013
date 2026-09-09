@@ -461,7 +461,7 @@ def main() -> None:
     sample_rows = (
         args.sample_rows_per_config
         if args.sample_rows_per_config is not None
-        else settings["sampling"]["rows_per_config"]
+        else settings["sample_mode"]["rows_per_config"]
     )
     total_target = (
         sum(settings["source"]["configs"].values())

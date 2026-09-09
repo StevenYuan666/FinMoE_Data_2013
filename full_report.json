@@ -1,20 +1,20 @@
 {
-  "mode": "sample",
+  "mode": "full",
   "year": 2013,
-  "rows": 100,
-  "token_count": 107528,
+  "rows": 21800204,
+  "token_count": 22693600656,
   "source_configs": [
     {
       "source_config": "CC-MAIN-2013-20",
-      "rows": 50,
-      "token_count": 42375,
-      "shards": 1
+      "rows": 11002672,
+      "token_count": 11441832889,
+      "shards": 45
     },
     {
       "source_config": "CC-MAIN-2013-48",
-      "rows": 50,
-      "token_count": 65153,
-      "shards": 1
+      "rows": 10797532,
+      "token_count": 11251767767,
+      "shards": 44
     }
   ],
   "processing_config": {
@@ -71,14 +71,14 @@
     }
   },
   "runtime": {
-    "python": "3.11.7",
-    "platform": "macOS-15.6.1-arm64-arm-64bit",
+    "python": "3.11.15",
+    "platform": "Linux-5.10.262-267.1063.amzn2int.x86_64-x86_64-with-glibc2.26",
     "packages": {
-      "datasets": "2.21.0",
-      "huggingface-hub": "0.24.6",
+      "datasets": "4.0.0",
+      "huggingface-hub": "1.30.0",
       "pyarrow": "17.0.0",
-      "tokenizers": "0.19.1",
-      "transformers": "4.44.2"
+      "tokenizers": "0.22.2",
+      "transformers": "5.0.0"
     }
   },
   "metadata_revision": {

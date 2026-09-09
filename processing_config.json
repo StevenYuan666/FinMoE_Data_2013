@@ -30,11 +30,24 @@
     "compression": "zstd",
     "split": "train"
   },
-  "sampling": {
+  "target_tokens": 100000000000,
+  "selection": {
+    "applies_to": "--mode full (the published dataset)",
+    "rule": "retain_all",
+    "shuffle": false,
+    "subset": false,
+    "random_seed": null,
+    "order": "source order preserved; documents are emitted in the order the pinned source yields them",
+    "documents_available": 21800204,
+    "documents_retained": 21800204,
+    "tokens_retained": 22693600656,
+    "reason": "The year totals 22,693,600,656 Qwen2-7B tokens, which is 22.7% of the 100,000,000,000 target. Because the available year is smaller than the target, every document is retained and no shuffling or subsetting is applied."
+  },
+  "sample_mode": {
+    "applies_to": "--mode sample only; NOT used for the published full run",
+    "purpose": "Produce a small fixed excerpt for format and token-count review before the full run",
     "method": "first N records from each pinned source config",
     "rows_per_config": 50,
     "shuffle": false
-  },
-  "target_tokens": 100000000000,
-  "selection_rule": "Retain all 2013 records because the available year is below the target; determine the exact total using the pinned Qwen2-7B tokenizer."
+  }
 }
