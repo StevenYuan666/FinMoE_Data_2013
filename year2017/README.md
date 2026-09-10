@@ -4,7 +4,7 @@ language:
   - en
 task_categories:
   - text-generation
-pretty_name: FineWeb-Edu 2017 with Qwen2-7B token counts
+pretty_name: FineWeb-Edu 2017 (~100B-token subset) with Qwen2-7B token counts
 size_categories:
   - 100M<n<1B
 configs:
@@ -18,19 +18,27 @@ configs:
         path: sample/train/*.parquet
 ---
 
-# FineWeb-Edu 2017 with Qwen2-7B token counts
+# FineWeb-Edu 2017 (~100B-token subset) with Qwen2-7B token counts
 
-A ~100B-token slice of FineWeb-Edu 2017, prepared for continued pretraining,
+A ~100B-token subset of FineWeb-Edu 2017, prepared for continued pretraining,
 with token counts computed by a pinned Qwen2-7B tokenizer.
 
-The full year is under `data/train/`. The 100-document sample used to agree the
-format before the run is kept under `sample/train/`.
+**This dataset is a selected subset, not the complete 2017 crawl year.** 2017
+contains about 168B Qwen2-7B tokens, above the 100B target, so it was shuffled
+and subsetted: `data/train/` holds 101,840,059 documents and 100,000,020,347
+tokens, which is 59.29% of the 171,755,787 documents available in 2017. See
+[Selection method](#selection-method) for exactly how the subset was drawn.
+
+The 100-document sample used to agree the format before processing is kept
+separately under `sample/train/`.
 
 The companion 2013 dataset, which is small enough to be retained whole rather
 than subsetted, is at
 [`stevenyuan666/fineweb-edu-2013-qwen2-7b`](https://huggingface.co/datasets/stevenyuan666/fineweb-edu-2013-qwen2-7b).
 
 ## Final totals
+
+These are the totals of the published subset, not of all 2017 data.
 
 | | Documents | Qwen2-7B tokens | Shards |
 |---|---|---|---|
@@ -49,8 +57,9 @@ than subsetted, is at
 | **Total** | **101,840,059** | **100,000,020,347** | **1,024** |
 
 - Target was 100,000,000,000 tokens. The run landed at **100.000020%** of it,
-  an overshoot of **20,347 tokens** across the whole year.
-- Retained **59.29%** of the 171,755,787 documents available in 2017.
+  an overshoot of **20,347 tokens** summed over the 12 dumps.
+- Retained **59.29%** of the 171,755,787 documents available in 2017; the
+  remaining 40.71% is deliberately not included.
 - Mean 981.93 tokens per document; shortest 35, longest 203,345.
 - Total size 180.70 GiB (194,020,432,053 bytes) of zstd-compressed Parquet.
 - 100,000 rows per shard, except the final shard of each dump.
@@ -191,10 +200,10 @@ here is computed from scratch with the pinned Qwen2-7B tokenizer.
 ## The sample
 
 100 documents and 73,477 tokens, allocated across the 12 dumps in proportion to
-dump size, drawn with the same seed and buffer as the full run. It is therefore
-the leading portion of what the run emitted for each dump, not a separately
-drawn excerpt. Its mean of 735 tokens per document is below the year's 982
-simply because 100 documents is a small draw.
+dump size, drawn with the same seed and buffer as the `--mode full` run. It is
+therefore the leading portion of what that run emitted for each dump, not a
+separately drawn excerpt. Its mean of 735 tokens per document is below the
+subset's 982 simply because 100 documents is a small draw.
 
 Details are in `sample_report.json`.
 
@@ -208,7 +217,7 @@ uv pip install --python .venv/bin/python -e '.[dev]'
 .venv/bin/python -m process_fineweb_edu \
   --mode sample --config processing_config.json --rows-per-shard 100
 
-# the full year (15h25m on 8 cores, ~181 GiB of output)
+# the ~100B-token subset (15h25m on 8 cores, ~181 GiB of output)
 .venv/bin/python -m process_fineweb_edu \
   --mode full \
   --config processing_config.json \
@@ -227,7 +236,7 @@ buffers are sized, so parallelism is bounded by memory rather than CPU. On a
 ```python
 from datasets import load_dataset
 
-# Full year, streaming to avoid a 181 GiB download
+# The ~100B-token subset, streaming to avoid a 181 GiB download
 dataset = load_dataset(
     "stevenyuan666/fineweb-edu-2017-qwen2-7b",
     split="train",
