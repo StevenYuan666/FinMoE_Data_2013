@@ -32,10 +32,11 @@ EXPECTED_SCHEMA = pa.schema(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--config", type=Path, default=CONFIG_PATH)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    config = json.loads(CONFIG_PATH.read_text())
+    config = json.loads(args.config.read_text())
     report = json.loads((args.output_root / "full_report.json").read_text())
     data_dir = args.output_root / "data" / "train"
     shards = sorted(data_dir.glob("*.parquet"))
@@ -86,14 +87,43 @@ def main() -> None:
 
     measured_rows = sum(item["rows"] for item in per_config.values())
     measured_tokens = sum(item["tokens"] for item in per_config.values())
-    expected_rows = sum(config["source"]["configs"].values())
+    available_rows = sum(config["source"]["configs"].values())
+    rule = config["selection"]["rule"]
+    target_tokens = config["target_tokens"]
 
-    if measured_rows != expected_rows:
-        problems.append(f"row total {measured_rows:,} != expected {expected_rows:,}")
     if measured_rows != report["rows"]:
         problems.append(f"row total {measured_rows:,} != report {report['rows']:,}")
     if measured_tokens != report["token_count"]:
         problems.append(f"token total {measured_tokens:,} != report {report['token_count']:,}")
+
+    if rule == "retain_all":
+        if measured_rows != available_rows:
+            problems.append(
+                f"retain_all: row total {measured_rows:,} != available {available_rows:,}"
+            )
+    elif rule == "token_budget":
+        # A budgeted year is a subset, so the row total must sit below what was
+        # available and the token total must land at or just above the target.
+        if measured_rows >= available_rows:
+            problems.append(
+                f"token_budget: retained {measured_rows:,} rows but only "
+                f"{available_rows:,} were available"
+            )
+        if measured_tokens < target_tokens:
+            problems.append(
+                f"token_budget: {measured_tokens:,} tokens is below the target {target_tokens:,}"
+            )
+        # Overshoot is bounded by one document per dump, so it cannot exceed the
+        # longest document times the number of dumps.
+        overshoot = measured_tokens - target_tokens
+        ceiling = (max_count or 0) * len(config["source"]["configs"])
+        if overshoot > ceiling:
+            problems.append(
+                f"token_budget: overshoot {overshoot:,} exceeds the "
+                f"one-document-per-dump ceiling of {ceiling:,}"
+            )
+    else:
+        problems.append(f"unknown selection rule {rule!r}")
 
     for item in report["source_configs"]:
         name = item["source_config"]
@@ -107,17 +137,34 @@ def main() -> None:
             problems.append(f"{name}: tokens {entry['tokens']:,} != report {item['token_count']:,}")
         if entry["shards"] != item["shards"]:
             problems.append(f"{name}: shards {entry['shards']} != report {item['shards']}")
-        if entry["rows"] != config["source"]["configs"][name]:
-            problems.append(f"{name}: rows do not match the pinned expected count")
+
+        if rule == "retain_all":
+            if entry["rows"] != config["source"]["configs"][name]:
+                problems.append(f"{name}: rows do not match the pinned available count")
+        else:
+            quota = item.get("token_quota")
+            if quota is None:
+                problems.append(f"{name}: report carries no token_quota")
+            elif entry["tokens"] < quota and not item.get("source_exhausted"):
+                problems.append(
+                    f"{name}: {entry['tokens']:,} tokens is short of its quota "
+                    f"{quota:,} and the source was not exhausted"
+                )
+            if entry["rows"] > config["source"]["configs"][name]:
+                problems.append(f"{name}: retained more rows than the dump contains")
 
     total_bytes = sum(item["bytes"] for item in per_config.values())
     result = {
         "output_root": str(args.output_root),
+        "selection_rule": rule,
         "shard_files": len(shards),
         "measured_rows": measured_rows,
-        "expected_rows": expected_rows,
+        "available_rows": available_rows,
+        "retention_percent": measured_rows / available_rows * 100,
         "measured_tokens": measured_tokens,
         "report_tokens": report["token_count"],
+        "percent_of_target": measured_tokens / target_tokens * 100,
+        "overshoot_tokens": measured_tokens - target_tokens,
         "per_config": {
             name: {
                 **entry,

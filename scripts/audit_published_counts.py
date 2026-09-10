@@ -18,12 +18,13 @@ from transformers import AutoTokenizer
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = ROOT / "processing_config.json"
+DEFAULT_CONFIG_PATH = ROOT / "processing_config.json"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, required=True)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--shards", type=int, default=12)
     parser.add_argument("--rows-per-shard", type=int, default=40)
     parser.add_argument("--batch-size", type=int, default=32)
@@ -31,7 +32,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    config = json.loads(CONFIG_PATH.read_text())
+    config = json.loads(args.config.read_text())
     settings = config["tokenizer"]
     tokenizer = AutoTokenizer.from_pretrained(
         settings["checkpoint"],

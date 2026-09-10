@@ -1,0 +1,157 @@
+{
+  "output_root": "/home/yeyyuan/fineweb-2017",
+  "seed": 20130520,
+  "shards_sampled": 24,
+  "documents_audited": 1800,
+  "tokens_audited": 1763882,
+  "mismatches": [],
+  "per_shard": [
+    {
+      "shard": "CC-MAIN-2017-04-00026.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-09-00022.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-09-00048.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-09-00062.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-13-00035.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-13-00072.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-17-00067.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-17-00074.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-22-00031.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-22-00069.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-26-00006.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-26-00033.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-30-00027.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-34-00007.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-34-00076.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-39-00003.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-39-00011.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-39-00012.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-43-00057.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-43-00073.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-47-00057.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-51-00017.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-51-00043.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    },
+    {
+      "shard": "CC-MAIN-2017-51-00059.parquet",
+      "row_group": 0,
+      "rows_audited": 75,
+      "mismatches": 0
+    }
+  ],
+  "tokenizer_class": "Qwen2Tokenizer",
+  "tokenizer_is_fast": true,
+  "verdict": "PASS"
+}

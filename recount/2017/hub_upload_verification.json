@@ -1,0 +1,9 @@
+{
+  "repo_id": "stevenyuan666/fineweb-edu-2017-qwen2-7b",
+  "local_shards": 1024,
+  "checked": 1024,
+  "verified_by_sha256": 1024,
+  "verified_by_size_only": 0,
+  "problems": [],
+  "verdict": "PASS"
+}

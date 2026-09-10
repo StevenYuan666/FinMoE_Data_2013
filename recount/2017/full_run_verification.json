@@ -1,0 +1,120 @@
+{
+  "output_root": "/home/yeyyuan/fineweb-2017",
+  "selection_rule": "token_budget",
+  "shard_files": 1024,
+  "measured_rows": 101840059,
+  "available_rows": 171755787,
+  "retention_percent": 59.29352412445934,
+  "measured_tokens": 100000020347,
+  "report_tokens": 100000020347,
+  "percent_of_target": 100.000020347,
+  "overshoot_tokens": 20347,
+  "per_config": {
+    "CC-MAIN-2017-04": {
+      "shards": 86,
+      "rows": 8521918,
+      "tokens": 8592150471,
+      "bytes": 16517670686,
+      "gib": 15.383279589936137,
+      "mean_tokens_per_doc": 1008.2413924893434
+    },
+    "CC-MAIN-2017-09": {
+      "shards": 87,
+      "rows": 8654127,
+      "tokens": 8778695225,
+      "bytes": 16931987214,
+      "gib": 15.769141925498843,
+      "mean_tokens_per_doc": 1014.3940833084608
+    },
+    "CC-MAIN-2017-13": {
+      "shards": 104,
+      "rows": 10398642,
+      "tokens": 10328041226,
+      "bytes": 19988369388,
+      "gib": 18.615619640797377,
+      "mean_tokens_per_doc": 993.2105774965615
+    },
+    "CC-MAIN-2017-17": {
+      "shards": 102,
+      "rows": 10137465,
+      "tokens": 10206484674,
+      "bytes": 19724882695,
+      "gib": 18.3702285354957,
+      "mean_tokens_per_doc": 1006.8083760585117
+    },
+    "CC-MAIN-2017-22": {
+      "shards": 77,
+      "rows": 7659211,
+      "tokens": 7577273154,
+      "bytes": 14690288859,
+      "gib": 13.68139764200896,
+      "mean_tokens_per_doc": 989.3020513470643
+    },
+    "CC-MAIN-2017-26": {
+      "shards": 83,
+      "rows": 8252175,
+      "tokens": 8105860489,
+      "bytes": 15757013389,
+      "gib": 14.674862277694046,
+      "mean_tokens_per_doc": 982.269582140466
+    },
+    "CC-MAIN-2017-30": {
+      "shards": 75,
+      "rows": 7482961,
+      "tokens": 7510325998,
+      "bytes": 14549190830,
+      "gib": 13.54998986236751,
+      "mean_tokens_per_doc": 1003.6569745586005
+    },
+    "CC-MAIN-2017-34": {
+      "shards": 86,
+      "rows": 8541245,
+      "tokens": 8002452527,
+      "bytes": 15624094076,
+      "gib": 14.551071520894766,
+      "mean_tokens_per_doc": 936.9187427593987
+    },
+    "CC-MAIN-2017-39": {
+      "shards": 77,
+      "rows": 7634836,
+      "tokens": 7462043256,
+      "bytes": 14509191366,
+      "gib": 13.512737458571792,
+      "mean_tokens_per_doc": 977.3678512544343
+    },
+    "CC-MAIN-2017-43": {
+      "shards": 92,
+      "rows": 9127732,
+      "tokens": 8699726059,
+      "bytes": 16980931358,
+      "gib": 15.814724711701274,
+      "mean_tokens_per_doc": 953.1092782960761
+    },
+    "CC-MAIN-2017-47": {
+      "shards": 79,
+      "rows": 7849424,
+      "tokens": 7665254343,
+      "bytes": 14913963312,
+      "gib": 13.889710709452629,
+      "mean_tokens_per_doc": 976.5371755940308
+    },
+    "CC-MAIN-2017-51": {
+      "shards": 76,
+      "rows": 7580323,
+      "tokens": 7071712925,
+      "bytes": 13832848880,
+      "gib": 12.882844433188438,
+      "mean_tokens_per_doc": 932.9039046225339
+    }
+  },
+  "total_bytes": 194020432053,
+  "total_gib": 180.69560830760747,
+  "min_token_count": 35,
+  "max_token_count": 203345,
+  "mean_tokens_per_doc": 981.9320739690459,
+  "target_tokens": 100000000000,
+  "below_target": false,
+  "schema_ok": true,
+  "problems": [],
+  "verdict": "PASS"
+}
